@@ -1,4 +1,6 @@
-export const fetchRepoData = async (options: any) => {
+import { RepositoryOptions } from './interfaces';
+
+export const fetchRepoData = async (options: RepositoryOptions) => {
     const { name, language } = options;
 
     const url = `api.github.com/search/repositories`
