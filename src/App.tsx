@@ -1,14 +1,14 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Table } from './components/Table';
 import { fetchRepoData } from './server';
 import { RepositoryOptions, Repo } from './interfaces';
 import './App.css';
 
 export const App:React.FC = () => {
-  const [repo, setRepo] = React.useState<RepositoryOptions>({name: '', language: ''});
-  const [repos, setRepos] = React.useState<Repo[] | []>([]);
-  const [totalCount, setTotalCount] = React.useState<number>(0);
-  const [page, setPage] = React.useState<number>(1);
+  const [repo, setRepo] = useState<RepositoryOptions>({name: '', language: ''});
+  const [repos, setRepos] = useState<Repo[] | []>([]);
+  const [page, setPage] = useState<number>(1);
+  const [isThrottling, setIsThrottling] = useState<boolean>(false);
 
   const handleChangeRepoName = (e) => {
     setRepo((prevRepo) => {
@@ -24,7 +24,10 @@ export const App:React.FC = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const { items, total_count } = await fetchRepoData(repo, page);
+    if (isThrottling) return;
+
+    const { items } = await fetchRepoData(repo, page);
+    setIsThrottling(true);
     const preppedRepos = items.map((repo) => {
       return {
         id: repo.id,
@@ -35,10 +38,12 @@ export const App:React.FC = () => {
       }
     })
     setRepos(preppedRepos);
-    setTotalCount(total_count);
   }
 
   const handleNextPage = async (type: string) => {
+    if (isThrottling) return;
+
+    setIsThrottling(true);
     const newPage = type === 'next' ? page + 1 : page - 1;
     setPage(newPage);
     const { items } = await fetchRepoData(repo, newPage);
@@ -53,6 +58,14 @@ export const App:React.FC = () => {
     })
     setRepos(preppedRepos);
   }
+
+  useEffect(() => {
+    if (isThrottling) {
+      setTimeout(() => {
+        setIsThrottling(false);
+      }, 5000)
+    }
+  }, [isThrottling]);
 
   return (
     <div className="App">
