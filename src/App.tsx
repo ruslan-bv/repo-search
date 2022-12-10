@@ -9,6 +9,7 @@ export const App:React.FC = () => {
   const [repos, setRepos] = useState<Repo[] | []>([]);
   const [page, setPage] = useState<number>(1);
   const [isThrottling, setIsThrottling] = useState<boolean>(false);
+  const [loader, setLoader] = useState<boolean>(false);
 
   const handleChangeRepoName = (e) => {
     setRepo((prevRepo) => {
@@ -26,8 +27,10 @@ export const App:React.FC = () => {
     e.preventDefault();
     if (isThrottling) return;
 
-    const { items } = await fetchRepoData(repo, page);
+    setLoader(true);
+    const { items } = await fetchRepoData(repo, 1);
     setIsThrottling(true);
+    
     const preppedRepos = items.map((repo) => {
       return {
         id: repo.id,
@@ -37,15 +40,20 @@ export const App:React.FC = () => {
         url: repo.html_url
       }
     })
+    
+    setPage(1);
     setRepos(preppedRepos);
+    setLoader(false);
   }
 
   const handleNextPage = async (type: string) => {
     if (isThrottling) return;
 
     setIsThrottling(true);
+    setLoader(true);
     const newPage = type === 'next' ? page + 1 : page - 1;
     setPage(newPage);
+    
     const { items } = await fetchRepoData(repo, newPage);
     const preppedRepos = items.map((repo) => {
       return {
@@ -56,7 +64,9 @@ export const App:React.FC = () => {
         url: repo.html_url
       }
     })
+    
     setRepos(preppedRepos);
+    setLoader(false);
   }
 
   useEffect(() => {
@@ -71,25 +81,28 @@ export const App:React.FC = () => {
     <div className="App">
       <h1>Github Repo Search</h1>
       <form onSubmit={handleSubmit}>
-        <label>
-          Name:
-          <input type="text" value={repo.name} onChange={handleChangeRepoName} />
-        </label>
-        <label>
-          Language:
-          <input type="text" value={repo.language} onChange={handleChangeRepoLanguage} />
-        </label>
-        <input type="submit" />
+        <div className="form">
+          <label>
+            Name:
+            <input type="text" value={repo.name} onChange={handleChangeRepoName} />
+          </label>
+          <label>
+            Language:
+            <input type="text" value={repo.language} onChange={handleChangeRepoLanguage} />
+          </label>
+        </div>        
+        <input className="submit" type="submit" />
       </form>
-      {repos.length > 0 && 
+      {repos.length > 0 && !loader && 
       <>
         <Table repos={repos} />
-        <div>
-          {page > 1 && <button onClick={() => handleNextPage('back')}>Back</button>}
+        <div className="footer">
+          <button disabled={page === 1} onClick={() => handleNextPage('back')}>Back</button>
           {page}
           <button onClick={() => handleNextPage('next')}>Next</button>
         </div>
       </>}
+      {loader && <div className="loader"></div>}
     </div>
   );
 }
