@@ -70,10 +70,12 @@ export const App:React.FC = () => {
   }
 
   useEffect(() => {
+    // we throttle in 6 seconds since github api lets you do 10 requests per minute
+    // so this way we do not go over their limit to access data
     if (isThrottling) {
       setTimeout(() => {
         setIsThrottling(false);
-      }, 5000)
+      }, 6000)
     }
   }, [isThrottling]);
 
@@ -83,7 +85,7 @@ export const App:React.FC = () => {
       <form onSubmit={handleSubmit}>
         <div className="form">
           <label>
-            Name:
+            Name or Description:
             <input type="text" value={repo.name} onChange={handleChangeRepoName} />
           </label>
           <label>
